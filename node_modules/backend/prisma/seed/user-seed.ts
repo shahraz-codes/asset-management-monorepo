@@ -4,14 +4,22 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  const hashedPassword = await bcrypt.hash("admin123", 10); // 👈 plain text password = admin123
+  const hashedPassword = await bcrypt.hash("admin123", 10);
 
-  await prisma.user.create({
-    data: {
+  const tenant = await prisma.tenant.upsert({
+    where: { name: "Default Tenant" },
+    update: {},
+    create: { name: "Default Tenant" },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "admin@tenant.com" },
+    update: {},
+    create: {
       email: "admin@tenant.com",
-      password: hashedPassword, // store the hash, not plain text
+      password: hashedPassword,
       role: "admin",
-      tenantId: "tenant_1"
+      tenantId: tenant.id,
     },
   });
 }
